@@ -3,16 +3,25 @@ from PIL import Image
 
 # Function to load and preprocess the image
 def load_image(image_path):
-    raise NotImplementedError('You need to implement this function')
+    image = Image.open(image_path) # add name
+    data = np.asarray(image)
+    return data
 
 # Function to perform SVD on a single channel of the image matrix
 def compress_channel_svd(channel_matrix, rank):
-    raise NotImplementedError('You need to implement this function')
+    U, S, Vt = np.linalg.svd(channel_matrix, full_matrices=False)   # don't want full matrices since we want compressed, only necessary data
+    S_compressed = np.zeros((rank, rank))
+    np.fill_diagonal(S_compressed, S[:rank])
+    # u and Vt contain vectors that correspond to the singular values
+    U_compressed = U[:, :rank]
+    Vt_compressed = Vt[:rank, :]
+    compressed_channel = np.dot(U_compressed, np.dot(S_compressed, Vt_compressed))
+    return compressed_channel
 
 # Function to perform SVD for image compression
 def image_compression_svd(image_np, rank):
     # Check if the image is grayscale or color image
-    if len(image_np.shape) == 2:  # Grayscale
+    if len(image_np.shape) == 2:  # Grayscale, so only 2 channels
         compressed_img = compress_channel_svd(image_np, rank)
     else:
         # List to store compressed channels
@@ -53,12 +62,12 @@ def save_result(original_image_np, quantized_image_np, output_path):
     
 if __name__ == '__main__':
     # Load and process the image
-    image_path = 'favorite_image.png'  
+    image_path = 'flower.png'  
     output_path = 'compressed_image.png'  
     image_np = load_image(image_path)
 
     # Perform image quantization using SVD
-    rank = 8  # Rank for SVD, you may change this to experiment
+    rank = 2  # Rank for SVD, you may change this to experiment
     quantized_image_np = image_compression_svd(image_np, rank)
 
     # Save the original and quantized images side by side
